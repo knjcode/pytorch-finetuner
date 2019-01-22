@@ -109,6 +109,16 @@ def get_image_datasets(args, scale_size, input_size):
     return image_datasets
 
 
+def get_image_datasets_for_rgb_mean_and_std(args, scale_size, input_size):
+    transform = transforms.Compose([
+        transforms.Resize(scale_size),
+        transforms.CenterCrop(input_size),
+        transforms.ToTensor()
+        ])
+    image_datasets = datasets.ImageFolder(args.data, transform=transform)
+    return image_datasets
+
+
 # generate train and validation dataloaders
 def get_dataloader(args, scale_size, input_size):
     image_datasets = get_image_datasets(args, scale_size, input_size)

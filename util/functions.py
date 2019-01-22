@@ -19,6 +19,34 @@ from multiprocessing import cpu_count
 from torchvision.transforms.functional import center_crop, hflip, vflip, resize
 
 
+class IncrementalVariance(object):
+    def __init__(self, avg=0, count=0, var=0):
+        self.avg = avg
+        self.count = count
+        self.var = var
+
+    def update(self, avg, count, var):
+        delta = self.avg - avg
+        m_a = self.var * (self.count - 1)
+        m_b = var * (count - 1)
+        M2 = m_a + m_b + delta ** 2 * self.count * count / (self.count + count)
+        self.var = M2 / (self.count + count - 1)
+        self.avg = (self.avg * self.count + avg * count) / (self.count + count)
+        self.count = self.count + count
+
+    @property
+    def average(self):
+        return self.avg
+
+    @property
+    def variance(self):
+        return self.var
+
+    @property
+    def std(self):
+        return np.sqrt(self.var)
+
+
 class Metric(object):
     def __init__(self, name):
         self.name = name

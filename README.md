@@ -162,6 +162,18 @@ Test-accuracy: 0.995 (199/200)
 => Saved test log to "logs/20190117043959-test.log"
 ```
 
+### Calculate RGB mean and std of dataset
+
+```
+$ ./train.py example_images/train --calc-rgb-mean-and-std --batch-size 600
+=> Calculate rgb mean and std (dir: example_images/train  images: 600  batch-size: 600)
+Calc rgb mean/std: 100%|████████████████████████| 1/1 [00:04<00:00,  4.19s/it]
+=> processed: 600 images
+=> calculated rgb mean: [0.5068701  0.50441307 0.47790593]
+=> calculated rgb std: [0.28773245 0.27445307 0.29044855]
+Please use following command options when train and test:
+ --rgb-mean 0.507,0.504,0.478 --rgb-std 0.288,0.274,0.290
+```
 
 ## With Data Augmentation
 
@@ -269,9 +281,9 @@ usage: train.py [-h] [--model ARCH] [--from-scratch] [--epochs EPOCHS]
                 [--jitter-saturation JITTER_SATURATION]
                 [--jitter-hue JITTER_HUE]
                 [--random-rotate-degree RANDOM_ROTATE_DEGREE] [--image-dump]
-                [--cutout] [--cutout-holes CUTOUT_HOLES]
-                [--cutout-length CUTOUT_LENGTH] [--random-erasing]
-                [--random-erasing-p RANDOM_ERASING_P]
+                [--calc-rgb-mean-and-std] [--cutout]
+                [--cutout-holes CUTOUT_HOLES] [--cutout-length CUTOUT_LENGTH]
+                [--random-erasing] [--random-erasing-p RANDOM_ERASING_P]
                 [--random-erasing-sl RANDOM_ERASING_SL]
                 [--random-erasing-sh RANDOM_ERASING_SH]
                 [--random-erasing-r1 RANDOM_ERASING_R1]
@@ -358,6 +370,9 @@ optional arguments:
   --random-rotate-degree RANDOM_ROTATE_DEGREE
                         rotate degree of data augmentation (default: 3.0)
   --image-dump          dump batch images and exit (default: False)
+  --calc-rgb-mean-and-std
+                        calculate rgb mean and std of train images and exit
+                        (default: False)
   --cutout              apply cutout (default: False)
   --cutout-holes CUTOUT_HOLES
                         number of holes to cut out from image (default: 1)

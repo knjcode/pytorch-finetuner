@@ -119,6 +119,8 @@ parser.add_argument('--random-rotate-degree', type=float, default=3.0,
 
 parser.add_argument('--image-dump', action='store_true', default=False,
                     help='dump batch images and exit (default: False)')
+parser.add_argument('--calc-rgb-mean-and-std', action='store_true', default=False,
+                    help='calculate rgb mean and std of train images and exit (default: False)')
 
 # cutout
 parser.add_argument('--cutout', action='store_true', default=False,
@@ -171,6 +173,19 @@ def main():
 
     args = check_args(args)
 
+    formatter = logging.Formatter('%(message)s')
+    logzero.formatter(formatter)
+
+    if not os.path.exists(args.log_dir):
+        os.makedirs(args.log_dir, exist_ok=True)
+
+    log_filename = "{}-train.log".format(args.prefix)
+    logzero.logfile(os.path.join(args.log_dir, log_filename))
+
+    # calc rgb_mean and rgb_std
+    if args.calc_rgb_mean_and_std:
+        calc_rgb_mean_and_std(args, logger)
+
     # setup dataset
     train_loader, train_num_classes, train_class_names, valid_loader, _valid_num_classes, _valid_class_names \
         = get_dataloader(args, args.scale_size, args.input_size)
@@ -180,15 +195,6 @@ def main():
         args.disp_batches = target - target % 5
     if args.disp_batches < 5:
         args.disp_batches = 1
-
-    formatter = logging.Formatter('%(message)s')
-    logzero.formatter(formatter)
-
-    if not os.path.exists(args.log_dir):
-        os.makedirs(args.log_dir, exist_ok=True)
-
-    log_filename = "{}-train.log".format(args.prefix)
-    logzero.logfile(os.path.join(args.log_dir, log_filename))
 
     logger.info('Running script with args: {}'.format(str(args)))
     logger.info("scale_size: {}  input_size: {}".format(args.scale_size, args.input_size))
@@ -504,6 +510,45 @@ def adjust_learning_rate(args, epoch, batch_idx, train_loader, optimizer, schedu
     else:
         if args.cosine_annealing_t_max:
             scheduler.step()
+
+
+def calc_rgb_mean_and_std(args, logger):
+    from util.dataloader import get_image_datasets_for_rgb_mean_and_std
+    from util.functions import IncrementalVariance
+    from tqdm import tqdm
+
+    image_datasets = get_image_datasets_for_rgb_mean_and_std(args, args.scale_size, args.input_size)
+    logger.info("=> Calculate rgb mean and std (dir: {}  images: {}  batch-size: {})".format(args.data, len(image_datasets), args.batch_size))
+
+    if args.batch_size < len(image_datasets):
+        logger.info("To calculate more accurate values, please specify as large a batch size as possible.")
+
+    kwargs = {'num_workers': args.workers}
+    train_loader = torch.utils.data.DataLoader(
+        image_datasets, batch_size=args.batch_size, shuffle=False, **kwargs)
+
+    iv = IncrementalVariance()
+    processed = 0
+    with tqdm(total=len(train_loader), desc="Calc rgb mean/std") as t:
+        for data, _target in train_loader:
+            numpy_images = data.numpy()
+            batch_mean = np.mean(numpy_images, axis=(0, 2, 3))
+            batch_var = np.var(numpy_images, axis=(0, 2, 3))
+            iv.update(batch_mean, len(numpy_images), batch_var)
+            processed += len(numpy_images)
+            t.update(1)
+
+    logger.info("=> processed: {} images".format(processed))
+    logger.info("=> calculated rgb mean: {}".format(iv.average))
+    logger.info("=> calculated rgb std: {}".format(iv.std))
+
+    np.set_printoptions(formatter={'float': '{:0.3f}'.format})
+    rgb_mean_option = np.array2string(iv.average, separator=',').replace('[', '').replace(']', '')
+    rgb_std_option = np.array2string(iv.std, separator=',').replace('[', '').replace(']', '')
+    logger.info("Please use following command options when train and test:")
+    logger.info(" --rgb-mean {} --rgb-std {}".format(rgb_mean_option, rgb_std_option))
+
+    sys.exit(0)
 
 
 if __name__ == '__main__':
