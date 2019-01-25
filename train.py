@@ -46,6 +46,7 @@ parser.add_argument('--from-scratch', dest='scratch', action='store_true',
 # epochs, batch sixe, etc
 parser.add_argument('--epochs', type=int, default=30, help='number of total epochs to run (default: 30)')
 parser.add_argument('--batch-size', '-b', type=int, default=128, help='the batch size (default: 128)')
+parser.add_argument('--val-batch-size', type=int, default=256, help='the validation batch size (default: 256)')
 parser.add_argument('-j', '--workers', type=int, default=None,
                     help='number of data loading workers (default: 80%% of the number of cores)')
 parser.add_argument('--prefix', default='auto',

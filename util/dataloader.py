@@ -14,7 +14,6 @@ from torchvision import datasets, transforms
 def get_image_datasets(args, scale_size, input_size):
     data_transforms = {
         'train': transforms.Compose([
-            transforms.Resize(scale_size),
             transforms.RandomRotation(args.random_rotate_degree),
             transforms.RandomResizedCrop(input_size,
                                          scale=args.random_resized_crop_scale,
@@ -45,7 +44,6 @@ def get_image_datasets(args, scale_size, input_size):
             # When using mixup or ricap, cutout is applied after batch creation for learning
         else:
             data_transforms['train'] = transforms.Compose([
-                transforms.Resize(scale_size),
                 transforms.RandomRotation(args.random_rotate_degree),
                 transforms.RandomResizedCrop(input_size,
                                              scale=args.random_resized_crop_scale,
@@ -73,7 +71,6 @@ def get_image_datasets(args, scale_size, input_size):
             # When using mixup or ricap, cutout is applied after batch creation for learning
         else:
             data_transforms['train'] = transforms.Compose([
-                transforms.Resize(scale_size),
                 transforms.RandomRotation(args.random_rotate_degree),
                 transforms.RandomResizedCrop(input_size,
                                              scale=args.random_resized_crop_scale,
@@ -134,7 +131,7 @@ def get_dataloader(args, scale_size, input_size):
     train_loader = torch.utils.data.DataLoader(
         image_datasets['train'], batch_size=args.batch_size, shuffle=True, **kwargs)
     val_loader = torch.utils.data.DataLoader(
-        image_datasets['valid'], batch_size=args.batch_size, shuffle=False, **kwargs)
+        image_datasets['valid'], batch_size=args.val_batch_size, shuffle=False, **kwargs)
 
     return train_loader, train_num_classes, train_class_names, \
         val_loader, val_num_classes, val_class_names
