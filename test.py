@@ -65,10 +65,10 @@ parser.add_argument('--scale-size', type=int, default=None,
                     help='scale size (default: auto)')
 parser.add_argument('--input-size', type=int, default=None,
                     help='input size (default: auto)')
-parser.add_argument('--rgb-mean', type=str, default='0,0,0',
-                    help='RGB mean (default: 0,0,0)')
-parser.add_argument('--rgb-std', type=str, default='1,1,1',
-                    help='RGB std (default: 1,1,1)')
+parser.add_argument('--rgb-mean', type=str, default=None,
+                    help='RGB mean (default: auto)')
+parser.add_argument('--rgb-std', type=str, default=None,
+                    help='RGB std (default: auto)')
 
 # misc
 parser.add_argument('--no-cuda', action='store_true', default=False,
@@ -104,11 +104,11 @@ def main():
 
     logger.info('Running script with args: {}'.format(str(args)))
 
-    rgb_mean = [float(mean) for mean in args.rgb_mean.split(',')]
-    rgb_std = [float(std) for std in args.rgb_std.split(',')]
-
     checkpoint = load_checkpoint(args, args.model)
+    logger.info("=> loaded the model (epoch {})".format(checkpoint['epoch']))
     model_arch = checkpoint['arch']
+    model_args = checkpoint['args']
+
     if model_arch == 'pnasnet5large':
         scale_size = 352
         input_size = 331
@@ -123,6 +123,18 @@ def main():
         scale_size = args.scale_size
     if args.input_size:
         input_size = args.input_size
+
+    if args.rgb_mean:
+        rgb_mean = args.rgb_mean
+        rgb_mean = [float(mean) for mean in rgb_mean.split(',')]
+    else:
+        rgb_mean = model_args.rgb_mean
+    if args.rgb_std:
+        rgb_std = args.rgb_std
+        rgb_std = [float(std) for std in rgb_std.split(',')]
+    else:
+        rgb_std = model_args.rgb_std
+
 
     logger.info("scale_size: {}  input_size: {}".format(scale_size, input_size))
     logger.info("rgb_mean: {}".format(rgb_mean))
