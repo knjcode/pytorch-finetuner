@@ -123,6 +123,16 @@ parser.add_argument('--image-dump', action='store_true', default=False,
 parser.add_argument('--calc-rgb-mean-and-std', action='store_true', default=False,
                     help='calculate rgb mean and std of train images and exit (default: False)')
 
+# misc
+parser.add_argument('--no-cuda', action='store_true', default=False,
+                    help='disables CUDA training (default: False)')
+parser.add_argument('--seed', default=None, type=int,
+                    help='seed for initializing training. (default: None)')
+parser.add_argument('--warm_restart_next', type=int, default=None,
+                    help='next warm restart epoch (default: None')
+parser.add_argument('--warm_restart_current', type=int, default=None,
+                    help='current warm restart epoch (default: None)')
+
 # cutout
 parser.add_argument('--cutout', action='store_true', default=False,
                     help='apply cutout (default: False)')
@@ -159,11 +169,6 @@ parser.add_argument('--ricap-beta', type=float, default=0.3,
 parser.add_argument('--ricap-with-line', action='store_true', default=False,
                     help='RICAP with boundary line (default: False)')
 
-# misc
-parser.add_argument('--no-cuda', action='store_true', default=False,
-                    help='disables CUDA training (default: False)')
-parser.add_argument('--seed', default=None, type=int,
-                    help='seed for initializing training. (default: None)')
 
 best_acc1 = 0
 
@@ -298,19 +303,24 @@ def main():
     elif not args.cosine_annealing_t_max:  # MultiStepLR
         scheduler.step()
 
-    if args.cosine_annealing_t_max:  # CosineAnnealingLR
-        warmup_next = args.cosine_annealing_t_max + args.warmup_epochs
-        warmup_current = args.warmup_epochs
+    # for CosineAnnealingLR
+    if args.resume:
+        args.warm_restart_next = checkpoint['args'].warm_restart_next
+        args.warm_restart_current = checkpoint['args'].warm_restart_current
+    else:
+        if args.cosine_annealing_t_max:  # CosineAnnealingLR
+            args.warm_restart_next = args.cosine_annealing_t_max + args.warmup_epochs
+            args.warm_restart_current = args.warmup_epochs
 
     for epoch in range(args.start_epoch, args.epochs):
         start = time.time()
 
         # CosineAnnealingLR warm restart
-        if args.cosine_annealing_t_max and (epoch % warmup_next == 0) and epoch != 0:
-            current_span = warmup_next - warmup_current
+        if args.cosine_annealing_t_max and (epoch % args.warm_restart_next == 0) and epoch != 0:
+            current_span = args.warm_restart_next - args.warm_restart_current
             next_span = current_span * args.cosine_annealing_mult
-            warmup_current = warmup_next
-            warmup_next = warmup_next + next_span
+            args.warm_restart_current = args.warm_restart_next
+            args.warm_restart_next = args.warm_restart_next + next_span
             scheduler = get_cosine_annealing_lr_scheduler(args, optimizer, next_span, len(train_loader))
 
         if args.mixup:
@@ -476,7 +486,6 @@ def valid(args, valid_loader, model, device, criterion, optimizer, scheduler, ep
             if args.cuda:
                 data = data.cuda(non_blocking=True)
                 target = target.cuda(non_blocking=True)
-            optimizer.zero_grad()
             output = model(data)
             loss = criterion(output, target)
 

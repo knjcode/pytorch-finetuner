@@ -259,8 +259,9 @@ $ ./train.py example_images --ricap --random-erasing
 
 ```
 usage: train.py [-h] [--model ARCH] [--from-scratch] [--epochs EPOCHS]
-                [--batch-size BATCH_SIZE] [-j WORKERS] [--prefix PREFIX]
-                [--log-dir LOG_DIR] [--model-dir MODEL_DIR] [--resume MODEL]
+                [--batch-size BATCH_SIZE] [--val-batch-size VAL_BATCH_SIZE]
+                [-j WORKERS] [--prefix PREFIX] [--log-dir LOG_DIR]
+                [--model-dir MODEL_DIR] [--resume MODEL]
                 [--start-epoch START_EPOCH] [--disp-batches DISP_BATCHES]
                 [--save-best-only] [--save-best-and-last] [--base-lr BASE_LR]
                 [--lr-factor LR_FACTOR] [--lr-step-epochs LR_STEP_EPOCHS]
@@ -281,7 +282,9 @@ usage: train.py [-h] [--model ARCH] [--from-scratch] [--epochs EPOCHS]
                 [--jitter-saturation JITTER_SATURATION]
                 [--jitter-hue JITTER_HUE]
                 [--random-rotate-degree RANDOM_ROTATE_DEGREE] [--image-dump]
-                [--calc-rgb-mean-and-std] [--cutout]
+                [--calc-rgb-mean-and-std] [--no-cuda] [--seed SEED]
+                [--warm_restart_next WARM_RESTART_NEXT]
+                [--warm_restart_current WARM_RESTART_CURRENT] [--cutout]
                 [--cutout-holes CUTOUT_HOLES] [--cutout-length CUTOUT_LENGTH]
                 [--random-erasing] [--random-erasing-p RANDOM_ERASING_P]
                 [--random-erasing-sl RANDOM_ERASING_SL]
@@ -289,8 +292,7 @@ usage: train.py [-h] [--model ARCH] [--from-scratch] [--epochs EPOCHS]
                 [--random-erasing-r1 RANDOM_ERASING_R1]
                 [--random-erasing-r2 RANDOM_ERASING_R2] [--mixup]
                 [--mixup-alpha MIXUP_ALPHA] [--ricap]
-                [--ricap-beta RICAP_BETA] [--ricap-with-line] [--no-cuda]
-                [--seed SEED]
+                [--ricap-beta RICAP_BETA] [--ricap-with-line]
                 DIR
 
 train
@@ -306,6 +308,8 @@ optional arguments:
   --epochs EPOCHS       number of total epochs to run (default: 30)
   --batch-size BATCH_SIZE, -b BATCH_SIZE
                         the batch size (default: 128)
+  --val-batch-size VAL_BATCH_SIZE
+                        the validation batch size (default: 256)
   -j WORKERS, --workers WORKERS
                         number of data loading workers (default: 80% of the
                         number of cores)
@@ -373,6 +377,12 @@ optional arguments:
   --calc-rgb-mean-and-std
                         calculate rgb mean and std of train images and exit
                         (default: False)
+  --no-cuda             disables CUDA training (default: False)
+  --seed SEED           seed for initializing training. (default: None)
+  --warm_restart_next WARM_RESTART_NEXT
+                        next warm restart epoch (default: None
+  --warm_restart_current WARM_RESTART_CURRENT
+                        current warm restart epoch (default: None)
   --cutout              apply cutout (default: False)
   --cutout-holes CUTOUT_HOLES
                         number of holes to cut out from image (default: 1)
@@ -396,8 +406,6 @@ optional arguments:
   --ricap-beta RICAP_BETA
                         RICAP beta (default: 0.3)
   --ricap-with-line     RICAP with boundary line (default: False)
-  --no-cuda             disables CUDA training (default: False)
-  --seed SEED           seed for initializing training. (default: None)
 ```
 
 
