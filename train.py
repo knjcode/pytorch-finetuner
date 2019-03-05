@@ -81,6 +81,8 @@ parser.add_argument('--cosine-annealing-mult', type=int, default=2,
                     help='T_mult of CosineAnnealingLR scheduler')
 parser.add_argument('--cosine-annealing-eta-min', type=float, default=1e-05,
                     help='Minimum learning rate of CosineannealingLR scheduler')
+parser.add_argument('--final-lr', type=float, default=0.1,
+                    help='final_lr of AdaBound optimizer')
 parser.add_argument('--optimizer', type=str, default='sgd',
                     help='the optimizer type (default: sgd)')
 parser.add_argument('--momentum', type=float, default=0.9,
