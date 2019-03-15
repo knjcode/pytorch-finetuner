@@ -263,13 +263,14 @@ usage: train.py [-h] [--model ARCH] [--from-scratch] [--epochs EPOCHS]
                 [-j WORKERS] [--prefix PREFIX] [--log-dir LOG_DIR]
                 [--model-dir MODEL_DIR] [--resume MODEL]
                 [--start-epoch START_EPOCH] [--disp-batches DISP_BATCHES]
-                [--save-best-only] [--save-best-and-last] [--base-lr BASE_LR]
-                [--lr-factor LR_FACTOR] [--lr-step-epochs LR_STEP_EPOCHS]
-                [--lr-patience LR_PATIENCE]
+                [--save-best-only] [--save-best-and-last] [--drop-last]
+                [--base-lr BASE_LR] [--lr-factor LR_FACTOR]
+                [--lr-step-epochs LR_STEP_EPOCHS] [--lr-patience LR_PATIENCE]
                 [--cosine-annealing-t-max COSINE_ANNEALING_T_MAX]
                 [--cosine-annealing-mult COSINE_ANNEALING_MULT]
                 [--cosine-annealing-eta-min COSINE_ANNEALING_ETA_MIN]
-                [--optimizer OPTIMIZER] [--momentum MOMENTUM] [--wd WD]
+                [--final-lr FINAL_LR] [--optimizer OPTIMIZER]
+                [--momentum MOMENTUM] [--wd WD]
                 [--warmup-epochs WARMUP_EPOCHS] [--scale-size SCALE_SIZE]
                 [--input-size INPUT_SIZE] [--rgb-mean RGB_MEAN]
                 [--rgb-std RGB_STD]
@@ -326,6 +327,8 @@ optional arguments:
                         validation accuracy (default: False)
   --save-best-and-last  save last and latest best model according to the
                         validation accuracy (default: False)
+  --drop-last           drop the last incomplete batch, if the dataset size is
+                        not divisible by the batch size. (default: False)
   --base-lr BASE_LR     initial learning rate (default: 0.001)
   --lr-factor LR_FACTOR
                         the ratio to reduce lr on each step (default: 0.1)
@@ -341,6 +344,7 @@ optional arguments:
                         T_mult of CosineAnnealingLR scheduler
   --cosine-annealing-eta-min COSINE_ANNEALING_ETA_MIN
                         Minimum learning rate of CosineannealingLR scheduler
+  --final-lr FINAL_LR   final_lr of AdaBound optimizer
   --optimizer OPTIMIZER
                         the optimizer type (default: sgd)
   --momentum MOMENTUM   momentum (default: 0.9)

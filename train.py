@@ -65,6 +65,8 @@ parser.add_argument('--save-best-only', action='store_true', default=False,
                     help='save only the latest best model according to the validation accuracy (default: False)')
 parser.add_argument('--save-best-and-last', action='store_true', default=False,
                     help='save last and latest best model according to the validation accuracy (default: False)')
+parser.add_argument('--drop-last', action='store_true', default=False,
+                    help='drop the last incomplete batch, if the dataset size is not divisible by the batch size. (default: False)')
 
 # optimizer, lr, etc
 parser.add_argument('--base-lr', type=float, default=0.001,

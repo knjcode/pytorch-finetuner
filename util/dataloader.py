@@ -129,7 +129,7 @@ def get_dataloader(args, scale_size, input_size):
 
     kwargs = {'num_workers': args.workers, 'pin_memory': True} if args.cuda else {}
     train_loader = torch.utils.data.DataLoader(
-        image_datasets['train'], batch_size=args.batch_size, shuffle=True, **kwargs)
+        image_datasets['train'], batch_size=args.batch_size, shuffle=True, drop_last=args.drop_last, **kwargs)
     val_loader = torch.utils.data.DataLoader(
         image_datasets['valid'], batch_size=args.val_batch_size, shuffle=False, **kwargs)
 
