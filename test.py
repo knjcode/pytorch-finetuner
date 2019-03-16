@@ -109,20 +109,14 @@ def main():
     model_arch = checkpoint['arch']
     model_args = checkpoint['args']
 
-    if model_arch == 'pnasnet5large':
-        scale_size = 352
-        input_size = 331
-    elif 'inception' in model_arch:
-        scale_size = 320
-        input_size = 299
-    else:
-        scale_size = 256
-        input_size = 224
-
     if args.scale_size:
         scale_size = args.scale_size
+    else:
+        scale_size = model_args.scale_size
     if args.input_size:
         input_size = args.input_size
+    else:
+        input_size = model_args.input_size
 
     if args.rgb_mean:
         rgb_mean = args.rgb_mean
