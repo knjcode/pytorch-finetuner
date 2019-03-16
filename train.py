@@ -521,6 +521,11 @@ def adjust_learning_rate(args, epoch, batch_idx, train_loader, optimizer, schedu
         lr_adj = get_warmup_lr_adj(args, epoch, batch_idx, train_loader, optimizer, logger)
         for param_group in optimizer.param_groups:
             param_group['lr'] = args.base_lr * lr_adj
+    elif epoch == args.warmup_epochs and batch_idx == 0:
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = args.base_lr
+        if args.cosine_annealing_t_max:
+            scheduler.step()
     else:
         if args.cosine_annealing_t_max:
             scheduler.step()
