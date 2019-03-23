@@ -15,7 +15,7 @@ import torch.backends.cudnn as cudnn
 import torch.utils.data.distributed
 
 from multiprocessing import cpu_count
-from PIL import ImageFile
+from PIL import Image, ImageFile
 from sklearn.metrics import classification_report
 from torchvision import transforms
 from tqdm import tqdm
@@ -69,6 +69,9 @@ parser.add_argument('--rgb-mean', type=str, default=None,
                     help='RGB mean (default: auto)')
 parser.add_argument('--rgb-std', type=str, default=None,
                     help='RGB std (default: auto)')
+parser.add_argument('--interpolation', type=str, default=None,
+                    choices=[None, 'BILINEAR', 'BICUBIC', 'NEAREST'],
+                    help='interpolation. (default: auto)')
 
 # misc
 parser.add_argument('--no-cuda', action='store_true', default=False,
@@ -129,21 +132,31 @@ def main():
     else:
         rgb_std = model_args.rgb_std
 
+    if args.interpolation:
+        interpolation = args.interpolation
+    else:
+        try:
+            interpolation = model_args.interpolation
+        except AttributeError:
+            interpolation = 'BILINEAR'
 
     logger.info("scale_size: {}  input_size: {}".format(scale_size, input_size))
     logger.info("rgb_mean: {}".format(rgb_mean))
     logger.info("rgb_std: {}".format(rgb_std))
+    logger.info("interpolation: {}".format(interpolation))
+
+    interpolation = getattr(Image, interpolation, 2)
 
     # Data augmentation and normalization for test
     data_transforms = {
         'test': transforms.Compose([
-            transforms.Resize(scale_size),
+            transforms.Resize(scale_size, interpolation=interpolation),
             transforms.CenterCrop(input_size),
             transforms.ToTensor(),
             transforms.Normalize(rgb_mean, rgb_std)
         ]),
         'test_FiveCrop': transforms.Compose([
-            transforms.Resize(scale_size),
+            transforms.Resize(scale_size, interpolation=interpolation),
             transforms.FiveCrop(input_size),
             transforms.Lambda(lambda crops: torch.stack(
                 [transforms.ToTensor()(crop) for crop in crops])),
@@ -151,7 +164,7 @@ def main():
                 [transforms.Normalize(rgb_mean, rgb_std)(crop) for crop in crops]))
         ]),
         'test_TenCrop': transforms.Compose([
-            transforms.Resize(scale_size),
+            transforms.Resize(scale_size, interpolation=interpolation),
             transforms.TenCrop(input_size),
             transforms.Lambda(lambda crops: torch.stack(
                 [transforms.ToTensor()(crop) for crop in crops])),
@@ -159,7 +172,7 @@ def main():
                 [transforms.Normalize(rgb_mean, rgb_std)(crop) for crop in crops]))
         ]),
         'test_CustomSixCrop': transforms.Compose([
-            transforms.Resize(scale_size),
+            transforms.Resize(scale_size, interpolation=interpolation),
             CustomSixCrop(input_size),
             transforms.Lambda(lambda crops: torch.stack(
                 [transforms.ToTensor()(crop) for crop in crops])),
@@ -167,7 +180,7 @@ def main():
                 [transforms.Normalize(rgb_mean, rgb_std)(crop) for crop in crops]))
         ]),
         'test_CustomSevenCrop': transforms.Compose([
-            transforms.Resize(scale_size),
+            transforms.Resize(scale_size, interpolation=interpolation),
             CustomSevenCrop(input_size),
             transforms.Lambda(lambda crops: torch.stack(
                 [transforms.ToTensor()(crop) for crop in crops])),
@@ -175,7 +188,7 @@ def main():
                 [transforms.Normalize(rgb_mean, rgb_std)(crop) for crop in crops]))
         ]),
         'test_CustomTenCrop': transforms.Compose([
-            transforms.Resize(scale_size),
+            transforms.Resize(scale_size, interpolation=interpolation),
             CustomTenCrop(input_size),
             transforms.Lambda(lambda crops: torch.stack(
                 [transforms.ToTensor()(crop) for crop in crops])),
@@ -183,7 +196,7 @@ def main():
                 [transforms.Normalize(rgb_mean, rgb_std)(crop) for crop in crops]))
         ]),
         'test_CustomTwentyCrop': transforms.Compose([
-            transforms.Resize(scale_size),
+            transforms.Resize(scale_size, interpolation=interpolation),
             CustomTwentyCrop(input_size),
             transforms.Lambda(lambda crops: torch.stack(
                 [transforms.ToTensor()(crop) for crop in crops])),

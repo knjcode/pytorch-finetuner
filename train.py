@@ -121,6 +121,9 @@ parser.add_argument('--jitter-hue', type=float, default=0.05,
                     help='jitter hue of data augmentation (default: 0.05)')
 parser.add_argument('--random-rotate-degree', type=float, default=3.0,
                     help='rotate degree of data augmentation (default: 3.0)')
+parser.add_argument('--interpolation', type=str, default='BILINEAR',
+                    choices=['BILINEAR', 'BICUBIC', 'NEAREST'],
+                    help='interpolation. (default: BILINEAR)')
 
 parser.add_argument('--image-dump', action='store_true', default=False,
                     help='dump batch images and exit (default: False)')

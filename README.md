@@ -282,7 +282,8 @@ usage: train.py [-h] [--model ARCH] [--from-scratch] [--epochs EPOCHS]
                 [--jitter-contrast JITTER_CONTRAST]
                 [--jitter-saturation JITTER_SATURATION]
                 [--jitter-hue JITTER_HUE]
-                [--random-rotate-degree RANDOM_ROTATE_DEGREE] [--image-dump]
+                [--random-rotate-degree RANDOM_ROTATE_DEGREE]
+                [--interpolation {BILINEAR,BICUBIC,NEAREST}] [--image-dump]
                 [--calc-rgb-mean-and-std] [--no-cuda] [--seed SEED]
                 [--warm_restart_next WARM_RESTART_NEXT]
                 [--warm_restart_current WARM_RESTART_CURRENT] [--cutout]
@@ -377,6 +378,8 @@ optional arguments:
                         jitter hue of data augmentation (default: 0.05)
   --random-rotate-degree RANDOM_ROTATE_DEGREE
                         rotate degree of data augmentation (default: 3.0)
+  --interpolation {BILINEAR,BICUBIC,NEAREST}
+                        interpolation. (default: BILINEAR)
   --image-dump          dump batch images and exit (default: False)
   --calc-rgb-mean-and-std
                         calculate rgb mean and std of train images and exit

@@ -8,16 +8,21 @@ import numpy as np
 import torch
 
 from torchvision import datasets, transforms
+from PIL import Image
 
 
 # generate train and validation image dataset
 def get_image_datasets(args, scale_size, input_size):
+    interpolation = getattr(Image, args.interpolation, 2)
+
     data_transforms = {
         'train': transforms.Compose([
-            transforms.RandomRotation(args.random_rotate_degree),
+            transforms.RandomRotation(args.random_rotate_degree,
+                                      resample=interpolation),
             transforms.RandomResizedCrop(input_size,
                                          scale=args.random_resized_crop_scale,
-                                         ratio=args.random_resized_crop_ratio),
+                                         ratio=args.random_resized_crop_ratio,
+                                         interpolation=interpolation),
             transforms.RandomHorizontalFlip(args.random_horizontal_flip),
             transforms.RandomVerticalFlip(args.random_vertical_flip),
             transforms.ColorJitter(
@@ -30,7 +35,7 @@ def get_image_datasets(args, scale_size, input_size):
             transforms.Normalize(args.rgb_mean, args.rgb_std)
         ]),
         'valid': transforms.Compose([
-            transforms.Resize(scale_size),
+            transforms.Resize(scale_size, interpolation=interpolation),
             transforms.CenterCrop(input_size),
             transforms.ToTensor(),
             transforms.Normalize(args.rgb_mean, args.rgb_std)
@@ -44,10 +49,12 @@ def get_image_datasets(args, scale_size, input_size):
             # When using mixup or ricap, cutout is applied after batch creation for learning
         else:
             data_transforms['train'] = transforms.Compose([
-                transforms.RandomRotation(args.random_rotate_degree),
+                transforms.RandomRotation(args.random_rotate_degree,
+                                          resample=interpolation),
                 transforms.RandomResizedCrop(input_size,
                                              scale=args.random_resized_crop_scale,
-                                             ratio=args.random_resized_crop_ratio),
+                                             ratio=args.random_resized_crop_ratio,
+                                             interpolation=interpolation),
                 transforms.RandomHorizontalFlip(args.random_horizontal_flip),
                 transforms.RandomVerticalFlip(args.random_vertical_flip),
                 transforms.ColorJitter(
@@ -71,10 +78,12 @@ def get_image_datasets(args, scale_size, input_size):
             # When using mixup or ricap, cutout is applied after batch creation for learning
         else:
             data_transforms['train'] = transforms.Compose([
-                transforms.RandomRotation(args.random_rotate_degree),
+                transforms.RandomRotation(args.random_rotate_degree,
+                                          resample=interpolation),
                 transforms.RandomResizedCrop(input_size,
                                              scale=args.random_resized_crop_scale,
-                                             ratio=args.random_resized_crop_ratio),
+                                             ratio=args.random_resized_crop_ratio,
+                                             interpolation=interpolation),
                 transforms.RandomHorizontalFlip(args.random_horizontal_flip),
                 transforms.RandomVerticalFlip(args.random_vertical_flip),
                 transforms.ColorJitter(
