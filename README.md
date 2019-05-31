@@ -221,7 +221,7 @@ Please use following command options when train and test:
   --rgb-std 0.229,0.224,0.225
 ```
 
-### Cutout, Random Erasing, mixup, RICAP
+### Cutout, Random Erasing, mixup, RICAP, CutMix
 
 ```
 # Cutout
@@ -235,6 +235,9 @@ $ ./train.py example_images --mixup
 
 # RICAP
 $ ./train.py example_images --ricap
+
+# CutMix
+$ ./train.py example_images --cutmix
 
 # mixup + Cutout
 $ ./train.py example_images --mixup --cutout
@@ -253,6 +256,7 @@ $ ./train.py example_images --ricap --random-erasing
 - Random Erasing: [Random Erasing Data Augmentation]
 - mixup: [mixup: Beyond Empirical Risk Minimization]
 - RICAP: [Data Augmentation using Random Image Cropping and Patching for Deep CNNs]
+- CutMix: [CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features]
 
 
 ## Usage
@@ -294,7 +298,8 @@ usage: train.py [-h] [--model ARCH] [--from-scratch] [--epochs EPOCHS]
                 [--random-erasing-r1 RANDOM_ERASING_R1]
                 [--random-erasing-r2 RANDOM_ERASING_R2] [--mixup]
                 [--mixup-alpha MIXUP_ALPHA] [--ricap]
-                [--ricap-beta RICAP_BETA] [--ricap-with-line]
+                [--ricap-beta RICAP_BETA] [--ricap-with-line] [--cutmix]
+                [--cutmix-beta CUTMIX_BETA] [--cutmix-p CUTMIX_P]
                 DIR
 
 train
@@ -413,6 +418,10 @@ optional arguments:
   --ricap-beta RICAP_BETA
                         RICAP beta (default: 0.3)
   --ricap-with-line     RICAP with boundary line (default: False)
+  --cutmix              apply CutMix (default: False)
+  --cutmix-beta CUTMIX_BETA
+                        CutMix beta (default: 1.0)
+  --cutmix-p CUTMIX_P   CutMix probability (default: 1.0)
 ```
 
 
@@ -421,3 +430,4 @@ optional arguments:
 [Random Erasing Data Augmentation]: https://arxiv.org/abs/1708.04896
 [mixup: Beyond Empirical Risk Minimization]: https://arxiv.org/pdf/1710.09412.pdf
 [Data Augmentation using Random Image Cropping and Patching for Deep CNNs]: https://arxiv.org/abs/1811.09030
+[CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features]: https://arxiv.org/pdf/1905.04899.pdf

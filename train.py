@@ -3,6 +3,7 @@
 
 import argparse
 import logging
+import math
 import os
 import sys
 import time
@@ -21,7 +22,7 @@ from torchvision.utils import save_image
 from logzero import logger
 
 from util.dataloader import get_dataloader, CutoutForBatchImages, RandomErasingForBatchImages
-from util.functions import check_args, get_lr, print_batch, report, report_lr, save_model, accuracy, Metric
+from util.functions import check_args, get_lr, print_batch, report, report_lr, save_model, accuracy, Metric, rand_bbox
 from util.optimizer import get_optimizer
 from util.scheduler import get_cosine_annealing_lr_scheduler, get_multi_step_lr_scheduler, get_reduce_lr_on_plateau_scheduler
 
@@ -176,6 +177,14 @@ parser.add_argument('--ricap-beta', type=float, default=0.3,
 parser.add_argument('--ricap-with-line', action='store_true', default=False,
                     help='RICAP with boundary line (default: False)')
 
+# cutmix
+parser.add_argument('--cutmix', action='store_true', default=False,
+                    help='apply CutMix (default: False)')
+parser.add_argument('--cutmix-beta', type=float, default=1.0,
+                    help='CutMix beta (default: 1.0)')
+parser.add_argument('--cutmix-prob', type=float, default=1.0,
+                    help='CutMix probability (default: 1.0)')
+
 
 best_acc1 = 0
 
@@ -221,6 +230,8 @@ def main():
         logger.info("Using mixup: alpha:{}".format(args.mixup_alpha))
     if args.ricap:
         logger.info("Using RICAP: beta:{}".format(args.ricap_beta))
+    if args.cutmix:
+        logger.info("Using CutMix: prob:{} beta:{}".format(args.cutmix_prob, args.cutmix_beta))
     if args.cutout:
         logger.info("Using cutout: holes:{} length:{}".format(args.cutout_holes, args.cutout_length))
     if args.random_erasing:
@@ -334,6 +345,8 @@ def main():
             train(args, 'mixup', train_loader, model, device, criterion, optimizer, scheduler, epoch, logger, log_writer)
         elif args.ricap:
             train(args, 'ricap', train_loader, model, device, criterion, optimizer, scheduler, epoch, logger, log_writer)
+        elif args.cutmix:
+            train(args, 'cutmix', train_loader, model, device, criterion, optimizer, scheduler, epoch, logger, log_writer)
         else:
             train(args, 'normal', train_loader, model, device, criterion, optimizer, scheduler, epoch, logger, log_writer)
 
@@ -359,8 +372,6 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
 
     start = time.time()
 
-    alpha = args.mixup_alpha
-    beta = args.ricap_beta
 
     if train_mode in ['mixup', 'ricap']:
         if args.cutout:
@@ -376,15 +387,12 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
         adjust_learning_rate(args, epoch, batch_idx, train_loader, optimizer, scheduler, logger)
 
         if train_mode is 'mixup':
+            alpha = args.mixup_alpha
             if alpha > 0:
                 lam = np.random.beta(alpha, alpha)
             else:
                 lam = 1
-            batch_size = data.size()[0]
-            if args.cuda:
-                index = torch.randperm(batch_size).cuda()
-            else:
-                index = torch.randperm(batch_size)
+            index = torch.randperm(data.size(0))
             mixed_data = lam * data + (1 - lam) * data[index, :]
             target_a, target_b = target, target[index]
 
@@ -394,6 +402,7 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
                 mixed_data = batch_random_erasing(mixed_data)
 
         elif train_mode is 'ricap':
+            beta = args.ricap_beta
             I_x, I_y = data.size()[2:]
             w = int(np.round(I_x * np.random.beta(beta, beta)))
             h = int(np.round(I_y * np.random.beta(beta, beta)))
@@ -425,10 +434,27 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
             if args.random_erasing:
                 patched_images = batch_random_erasing(patched_images)
 
+        elif train_mode is 'cutmix':
+            p = args.cutmix_prob
+            beta = args.cutmix_beta
+            r = np.random.rand(1)
+            if beta > 0 and r < p:
+                # generate mixed sample
+                lam = np.random.beta(beta, beta)
+                index = torch.randperm(data.size(0))
+                bbx1, bby1, bbx2, bby2 = rand_bbox(data.size(), lam)
+                data[:, :, bbx1:bbx2, bby1:bby2] = data[index, :, bbx1:bbx2, bby1:bby2]
+                mixed_data = data
+                target_a, target_b = target, target[index]
+            else:
+                # change normal train mode
+                train_mode = 'normal'
+
+
         # normal train mode applies Cutout or Random Erasing inside dataloader
 
         if args.image_dump:
-            if train_mode is 'mixup':
+            if train_mode in ['mixup', 'cutmix']:
                 save_image(mixed_data, './samples.jpg')
             elif train_mode is 'ricap':
                 save_image(patched_images, './samples.jpg')
@@ -438,7 +464,7 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
             sys.exit(0)
 
         if args.cuda:
-            if train_mode is 'mixup':
+            if train_mode in ['mixup', 'cutmix']:
                 mixed_data = mixed_data.cuda(non_blocking=True)
                 target_a = target_a.cuda(non_blocking=True)
                 target_b = target_b.cuda(non_blocking=True)
@@ -451,7 +477,7 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
         optimizer.zero_grad()
 
         # output and loss
-        if train_mode is 'mixup':
+        if train_mode in ['mixup', 'cutmix']:
             output = model(mixed_data)
             loss = lam * criterion(output, target_a) + (1 - lam) * criterion(output, target_b)
         elif train_mode is 'ricap':
@@ -464,7 +490,7 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
         loss.backward()
         optimizer.step()
 
-        if train_mode is 'mixup':
+        if train_mode in ['mixup', 'cutmix']:
             train_accuracy.update(lam * accuracy(output, target_a) + (1 - lam) * accuracy(output, target_b))
         elif train_mode is 'ricap':
             train_accuracy.update(sum([W_[k] * accuracy(output, c_[k]) for k in range(4)]))
