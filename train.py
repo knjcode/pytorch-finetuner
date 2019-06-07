@@ -177,6 +177,12 @@ parser.add_argument('--ricap-beta', type=float, default=0.3,
 parser.add_argument('--ricap-with-line', action='store_true', default=False,
                     help='RICAP with boundary line (default: False)')
 
+# icap
+parser.add_argument('--icap', action='store_true', default=False,
+                    help='apply ICAP (default: False)')
+parser.add_argument('--icap-beta', type=float, default=0.3,
+                    help='ICAP beta (default: 0.3)')
+
 # cutmix
 parser.add_argument('--cutmix', action='store_true', default=False,
                     help='apply CutMix (default: False)')
@@ -230,6 +236,8 @@ def main():
         logger.info("Using mixup: alpha:{}".format(args.mixup_alpha))
     if args.ricap:
         logger.info("Using RICAP: beta:{}".format(args.ricap_beta))
+    if args.icap:
+        logger.info("Using ICAP: beta:{}".format(args.icap_beta))
     if args.cutmix:
         logger.info("Using CutMix: prob:{} beta:{}".format(args.cutmix_prob, args.cutmix_beta))
     if args.cutout:
@@ -345,6 +353,8 @@ def main():
             train(args, 'mixup', train_loader, model, device, criterion, optimizer, scheduler, epoch, logger, log_writer)
         elif args.ricap:
             train(args, 'ricap', train_loader, model, device, criterion, optimizer, scheduler, epoch, logger, log_writer)
+        elif args.icap:
+            train(args, 'icap', train_loader, model, device, criterion, optimizer, scheduler, epoch, logger, log_writer)
         elif args.cutmix:
             train(args, 'cutmix', train_loader, model, device, criterion, optimizer, scheduler, epoch, logger, log_writer)
         else:
@@ -373,7 +383,7 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
     start = time.time()
 
 
-    if train_mode in ['mixup', 'ricap']:
+    if train_mode in ['mixup', 'ricap', 'icap']:
         if args.cutout:
             batch_cutout = CutoutForBatchImages(n_holes=args.cutout_holes, length=args.cutout_length)
         if args.random_erasing:
@@ -436,6 +446,39 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
             if args.random_erasing:
                 patched_images = batch_random_erasing(patched_images)
 
+        elif train_mode is 'icap':
+            beta = args.icap_beta
+            I_x, I_y = data.size()[2:]
+            w = int(np.round(I_x * np.random.beta(beta, beta)))
+            h = int(np.round(I_y * np.random.beta(beta, beta)))
+            h_from = [0, 0, h, h]
+            h_to = [h, h, I_y, I_y]
+            w_from = [0, w, 0, w]
+            w_to = [w, I_x, w, I_x]
+            cropped_images = {}
+            c_ = {}
+            W_ = {}
+
+            if args.cuda:
+                data = data.cuda(non_blocking=True)
+            for k in range(4):
+                index = torch.randperm(data.size(0))
+                cropped_images[k] = data[index][:, :, h_from[k]:h_to[k], w_from[k]:w_to[k]]
+                if args.cuda:
+                    c_[k] = target[index].cuda(non_blocking=True)
+                else:
+                    c_[k] = target[index]
+                W_[k] = (h_to[k] - h_from[k]) * (w_to[k] - w_from[k]) / (I_x * I_y)
+
+            patched_images = torch.cat(
+                (torch.cat((cropped_images[0], cropped_images[2]), 2),
+                torch.cat((cropped_images[1], cropped_images[3]), 2)), 3)
+
+            if args.cutout:
+                patched_images = batch_cutout(patched_images)
+            if args.random_erasing:
+                patched_images = batch_random_erasing(patched_images)
+
         elif train_mode is 'cutmix':
             p = args.cutmix_prob
             beta = args.cutmix_beta
@@ -458,7 +501,7 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
         if args.image_dump:
             if train_mode in ['mixup', 'cutmix']:
                 save_image(mixed_data, './samples.jpg')
-            elif train_mode is 'ricap':
+            elif train_mode in ['ricap', 'icap']:
                 save_image(patched_images, './samples.jpg')
             else:
                 save_image(data, './samples.jpg')
@@ -470,7 +513,7 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
                 mixed_data = mixed_data.cuda(non_blocking=True)
                 target_a = target_a.cuda(non_blocking=True)
                 target_b = target_b.cuda(non_blocking=True)
-            elif train_mode is 'ricap':
+            elif train_mode in ['ricap', 'icap']:
                 patched_images = patched_images.cuda(non_blocking=True)
             else:  # vanila train
                 data = data.cuda(non_blocking=True)
@@ -482,7 +525,7 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
         if train_mode in ['mixup', 'cutmix']:
             output = model(mixed_data)
             loss = lam * criterion(output, target_a) + (1 - lam) * criterion(output, target_b)
-        elif train_mode is 'ricap':
+        elif train_mode in ['ricap', 'icap']:
             output = model(patched_images)
             loss = sum(W_[k] * criterion(output, c_[k]) for k in range(4))
         else:  # vanila train
@@ -494,7 +537,7 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
 
         if train_mode in ['mixup', 'cutmix']:
             train_accuracy.update(lam * accuracy(output, target_a) + (1 - lam) * accuracy(output, target_b))
-        elif train_mode is 'ricap':
+        elif train_mode in ['ricap', 'icap']:
             train_accuracy.update(sum([W_[k] * accuracy(output, c_[k]) for k in range(4)]))
         else:  # vanila train
             train_accuracy.update(accuracy(output, target))
