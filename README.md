@@ -221,7 +221,7 @@ Please use following command options when train and test:
   --rgb-std 0.229,0.224,0.225
 ```
 
-### Cutout, Random Erasing, mixup, RICAP, CutMix
+### Cutout, Random Erasing, mixup, RICAP, ICAP, CutMix
 
 ```
 # Cutout
@@ -235,6 +235,9 @@ $ ./train.py example_images --mixup
 
 # RICAP
 $ ./train.py example_images --ricap
+
+# ICAP
+$ ./train.py example_images --icap
 
 # CutMix
 $ ./train.py example_images --cutmix
@@ -298,8 +301,9 @@ usage: train.py [-h] [--model ARCH] [--from-scratch] [--epochs EPOCHS]
                 [--random-erasing-r1 RANDOM_ERASING_R1]
                 [--random-erasing-r2 RANDOM_ERASING_R2] [--mixup]
                 [--mixup-alpha MIXUP_ALPHA] [--ricap]
-                [--ricap-beta RICAP_BETA] [--ricap-with-line] [--cutmix]
-                [--cutmix-beta CUTMIX_BETA] [--cutmix-p CUTMIX_P]
+                [--ricap-beta RICAP_BETA] [--ricap-with-line] [--icap]
+                [--icap-beta ICAP_BETA] [--cutmix] [--cutmix-beta CUTMIX_BETA]
+                [--cutmix-prob CUTMIX_PROB]
                 DIR
 
 train
@@ -418,10 +422,14 @@ optional arguments:
   --ricap-beta RICAP_BETA
                         RICAP beta (default: 0.3)
   --ricap-with-line     RICAP with boundary line (default: False)
+  --icap                apply ICAP (default: False)
+  --icap-beta ICAP_BETA
+                        ICAP beta (default: 0.3)
   --cutmix              apply CutMix (default: False)
   --cutmix-beta CUTMIX_BETA
                         CutMix beta (default: 1.0)
-  --cutmix-p CUTMIX_P   CutMix probability (default: 1.0)
+  --cutmix-prob CUTMIX_PROB
+                        CutMix probability (default: 1.0)
 ```
 
 
