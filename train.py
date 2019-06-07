@@ -411,6 +411,8 @@ def train(args, train_mode, train_loader, model, device, criterion, optimizer, s
             cropped_images = {}
             c_ = {}
             W_ = {}
+            if args.cuda:
+                data = data.cuda(non_blocking=True)
             for k in range(4):
                 index = torch.randperm(data.size(0))
                 x_k = np.random.randint(0, I_x - w_[k] + 1)
