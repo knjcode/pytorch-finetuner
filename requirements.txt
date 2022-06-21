@@ -2,7 +2,7 @@ adabound==0.0.5
 cnn-finetune==0.5.3
 logzero==1.5.0
 munch==2.3.2
-numpy==1.16.4
+numpy==1.22.0
 Pillow==6.0.0
 pretrainedmodels==0.7.4
 protobuf==3.8.0
